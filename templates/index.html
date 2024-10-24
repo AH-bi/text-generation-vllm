@@ -3,60 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Text Generation</title>
+    <title>Text Generation with vLLM</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { color: #333; }
+        form { margin-top: 20px; }
+        input[type="text"] {
+            width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px;
         }
-        #loading {
-            display: none;
-            margin-top: 20px;
-            font-size: 16px;
-            color: blue;
+        button {
+            padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;
         }
-        #result {
-            margin-top: 20px;
-            font-size: 18px;
-            white-space: pre-wrap; 
-        }
+        button:hover { background-color: #0056b3; }
+        #loading { display: none; color: #007bff; }
+        .message { padding: 10px; margin: 5px 0; border-radius: 4px; }
+        .user-message { background-color: #e0e0e0; }
+        .bot-message { background-color: #d0ffd0; }
     </style>
 </head>
 <body>
-    <h1>Text Generation with Hugging Face GPT-2</h1>
-    <form id="generate-form" action="/generate/" method="post">
-        <input type="text" name="prompt" placeholder="Enter your prompt" required>
+    <h1>Text Generation</h1>
+    <form id="generation-form">
+        <input type="text" id="prompt" placeholder="Enter your prompt" required>
         <button type="submit">Generate</button>
     </form>
-    <div id="loading">Generating text, please wait...</div>
-    <div id="result"></div>
+    <div id="loading">Generating response...</div>
+    <div id="conversation"></div>
 
     <script>
-        const form = document.getElementById('generate-form');
+        const form = document.getElementById('generation-form');
         const loading = document.getElementById('loading');
-        const result = document.getElementById('result');
+        const conversation = document.getElementById('conversation');
 
-        form.onsubmit = async (event) => {
-            event.preventDefault(); 
-            loading.style.display = 'block'; 
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const prompt = document.getElementById('prompt').value;
+            if (!prompt) return;
 
-            const formData = new FormData(form);
+            // add user's message to the conversation
+            const userMessage = document.createElement('div');
+            userMessage.classList.add('message', 'user-message');
+            userMessage.textContent = prompt;
+            conversation.appendChild(userMessage);
 
-            const response = await fetch(form.action, {
-                method: 'POST',
-                body: formData,
-            });
+            
+            loading.style.display = 'block';
 
-            loading.style.display = 'none'; 
+            
+            try {
+                const response = await fetch('/generate/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ prompt })
+                });
 
-            if (response.ok) {
                 const data = await response.json();
-                result.innerText = `Prompt: ${data.prompt}\nGenerated Text: ${data.generated_text}`;
-            } else {
-                const errorData = await response.json();
-                result.innerText = `Error: ${errorData.detail}`;
+
+                // add bot's response to the conversation
+                const botMessage = document.createElement('div');
+                botMessage.classList.add('message', 'bot-message');
+                botMessage.textContent = data.generated_text;
+                conversation.appendChild(botMessage);
+
+                // scroll to the latest message
+                conversation.scrollTop = conversation.scrollHeight;
+            } catch (error) {
+                console.error('Error generating text:', error);
+            } finally {
+                loading.style.display = 'none';
+                document.getElementById('prompt').value = ''; // Clear input
             }
-        };
+        });
     </script>
 </body>
 </html>

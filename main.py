@@ -4,10 +4,9 @@ from fastapi.templating import Jinja2Templates
 from transformers import pipeline, set_seed
 import logging
 
-
 logging.basicConfig(level=logging.INFO)
 
-# Initialization
+# initialization
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
@@ -16,26 +15,25 @@ generator = pipeline('text-generation', model='gpt2')  # Using GPT-2
 set_seed(42)  
 
 def preprocess_text(text: str) -> str:
-    """Clean the input text"""
+    """clean the input text"""
     return text.strip().replace("\n", " ")
 
 @app.exception_handler(Exception)
 async def exception_handler(request: Request, exc: Exception):
-    """Handle exceptions and log errors"""
+    """handle exceptions and log errors"""
     logging.error(f"Error occurred: {exc}")
     return JSONResponse(content={"detail": str(exc)}, status_code=500)
 
 @app.post("/generate/")
-async def generate_text(
-    prompt: str = Form(...),
-    max_tokens: int = Form(100),
-    temperature: float = Form(0.7)
-):
-  
+async def generate_text(prompt: str = Form(...)):
     cleaned_prompt = preprocess_text(prompt)
 
     try:
-        # Generate text using Hugging Face's pipeline
+        # hardcoding max_tokens and temperature 
+        max_tokens = 100  
+        temperature = 0.7  
+
+        # generate text 
         generated_output = generator(cleaned_prompt, max_length=max_tokens, temperature=temperature, num_return_sequences=1)
         generated_text = generated_output[0]['generated_text']
     except Exception as e:
@@ -46,7 +44,7 @@ async def generate_text(
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    """Serve the main HTML form for text input"""
+    """serve the main HTML form for text input"""
     return templates.TemplateResponse("index.html", {"request": request})
 
 if __name__ == "__main__":

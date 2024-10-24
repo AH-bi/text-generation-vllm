@@ -1,4 +1,5 @@
 fastapi
 uvicorn
 vllm
+transformers
 python-multipart
