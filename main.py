@@ -12,7 +12,7 @@ app = FastAPI()
 templates = Jinja2Templates(directory="templates")  
 
 # Load the model
-model = LLM(model="gpt2", device="cpu")# using GPT-2 model 
+model = LLM(model="gpt2", device="cpu") # using GPT-2 model 
   
 
 def preprocess_text(text: str) -> str:
@@ -29,7 +29,7 @@ async def exception_handler(request: Request, exc: Exception):
 async def generate_text(prompt: str, temperature: float = Query(0.7), max_tokens: int = Query(100)):
     """Generate text based on the user prompt."""
     cleaned_prompt = preprocess_text(prompt)
-    # Check if `generate` is async or sync and call accordingly
+    
     try:
         generated_text = model.generate(cleaned_prompt, temperature=temperature, max_tokens=max_tokens)
     except Exception as e:
