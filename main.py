@@ -12,7 +12,7 @@ app = FastAPI()
 templates = Jinja2Templates(directory="templates")  
 
 # load the model
-model = LLM.from_pretrained("gpt2")  # ssing GPT-2 model 
+model = LLM.from_pretrained("gpt2")  # using GPT-2 model 
 
 def preprocess_text(text: str) -> str:
     """Clean the input text."""
