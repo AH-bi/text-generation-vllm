@@ -1,37 +1,43 @@
-from fastapi import FastAPI, Form, Query, Request
+from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-from vllm import LLM
+from transformers import pipeline, set_seed
 import logging
 
-# Set up logging
+
 logging.basicConfig(level=logging.INFO)
 
-# Initialization 
+# Initialization
 app = FastAPI()
-templates = Jinja2Templates(directory="templates")  
+templates = Jinja2Templates(directory="templates")
 
-# Load the model
-model = LLM(model="gpt2", device="cpu") # using GPT-2 model 
-  
+# load the model using Hugging Face's pipeline
+generator = pipeline('text-generation', model='gpt2')  # Using GPT-2
+set_seed(42)  
 
 def preprocess_text(text: str) -> str:
-    """Clean the input text."""
+    """Clean the input text"""
     return text.strip().replace("\n", " ")
 
 @app.exception_handler(Exception)
 async def exception_handler(request: Request, exc: Exception):
-    """Handle exceptions and log errors."""
+    """Handle exceptions and log errors"""
     logging.error(f"Error occurred: {exc}")
     return JSONResponse(content={"detail": str(exc)}, status_code=500)
 
 @app.post("/generate/")
-async def generate_text(prompt: str, temperature: float = Query(0.7), max_tokens: int = Query(100)):
-    """Generate text based on the user prompt."""
+async def generate_text(
+    prompt: str = Form(...),
+    max_tokens: int = Form(100),
+    temperature: float = Form(0.7)
+):
+  
     cleaned_prompt = preprocess_text(prompt)
-    
+
     try:
-        generated_text = model.generate(cleaned_prompt, temperature=temperature, max_tokens=max_tokens)
+        # Generate text using Hugging Face's pipeline
+        generated_output = generator(cleaned_prompt, max_length=max_tokens, temperature=temperature, num_return_sequences=1)
+        generated_text = generated_output[0]['generated_text']
     except Exception as e:
         logging.error(f"Error during text generation: {e}")
         return JSONResponse(content={"detail": str(e)}, status_code=500)
@@ -40,7 +46,7 @@ async def generate_text(prompt: str, temperature: float = Query(0.7), max_tokens
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    """Serve the main HTML form for text input."""
+    """Serve the main HTML form for text input"""
     return templates.TemplateResponse("index.html", {"request": request})
 
 if __name__ == "__main__":
