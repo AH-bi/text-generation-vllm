@@ -22,5 +22,8 @@ This is a simple web application that uses FastAPI and vLLM to generate text bas
 5. Open your browser and go to [http://127.0.0.1:8000](http://127.0.0.1:8000).
 
 ## Usage 
-* Enter a prompt in the input field and click "Generate" to see the generated text.
+- Enter a prompt in the input field and click "Generate" to see the generated text.
 
+
+## License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
