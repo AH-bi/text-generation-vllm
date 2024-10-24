@@ -4,15 +4,16 @@ from fastapi.templating import Jinja2Templates
 from vllm import LLM
 import logging
 
-# set up logging
+# Set up logging
 logging.basicConfig(level=logging.INFO)
 
-# initialization 
+# Initialization 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")  
 
-# load the model
-model = LLM.from_pretrained("gpt2")  # using GPT-2 model 
+# Load the model
+model = LLM(model="gpt2", device="cpu")# using GPT-2 model 
+  
 
 def preprocess_text(text: str) -> str:
     """Clean the input text."""
@@ -28,7 +29,13 @@ async def exception_handler(request: Request, exc: Exception):
 async def generate_text(prompt: str, temperature: float = Query(0.7), max_tokens: int = Query(100)):
     """Generate text based on the user prompt."""
     cleaned_prompt = preprocess_text(prompt)
-    generated_text = await model.generate(cleaned_prompt, temperature=temperature, max_tokens=max_tokens)
+    # Check if `generate` is async or sync and call accordingly
+    try:
+        generated_text = model.generate(cleaned_prompt, temperature=temperature, max_tokens=max_tokens)
+    except Exception as e:
+        logging.error(f"Error during text generation: {e}")
+        return JSONResponse(content={"detail": str(e)}, status_code=500)
+        
     return {"prompt": cleaned_prompt, "generated_text": generated_text}
 
 @app.get("/", response_class=HTMLResponse)
